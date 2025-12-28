@@ -6,7 +6,7 @@ resource "azurerm_resource_group" "rg" {
 resource "azurerm_iothub" "hub" {
   name                = "iiitdm-gowtham-hub" 
   resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location # This will now be Central India
+  location            = azurerm_resource_group.rg.location 
 
   sku {
     name     = "F1" 
