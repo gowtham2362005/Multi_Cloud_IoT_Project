@@ -1,4 +1,5 @@
-🌐 Multi-Cloud IoT Management: Azure & GCP Integration
+🌐 Multi-Cloud IoT Management
+
 🚀 Project Overview
 
 This project demonstrates a multi-cloud IoT architecture using Terraform for Infrastructure as Code (IaC) and Python for IoT device simulation.
