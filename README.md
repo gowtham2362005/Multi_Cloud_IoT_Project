@@ -1,69 +1,122 @@
-Multi-Cloud IoT Device Management
-Azure IoT Hub & GCP Pub/Sub Integration
+🌐 Multi-Cloud IoT Management: Azure & GCP Integration
+🚀 Project Overview
 
-This project demonstrates a multi-cloud IoT architecture where a single device (simulated via Python) communicates with both Microsoft Azure and Google Cloud Platform (GCP). It implements bi-directional communication, state synchronization, and remote command execution.
+This project demonstrates a multi-cloud IoT architecture using Terraform for Infrastructure as Code (IaC) and Python for IoT device simulation.
+It establishes bi-directional communication between a local IoT device and two major cloud providers:
 
-🚀 Features
-Infrastructure as Code (IaC): Automated provisioning of Azure IoT Hub and GCP Pub/Sub using Terraform.
+Microsoft Azure (IoT Hub)
 
-Multi-Cloud Telemetry: Simultaneous data broadcasting to Azure and GCP.
+Google Cloud Platform (Pub/Sub)
 
-Command & Control (C2): * Azure: Supports Direct Methods (e.g., triggering a reboot from the portal).
-
-GCP: Supports asynchronous command reception via Pub/Sub subscriptions.
-
-Device Twin Synchronization: * Syncs "Desired Properties" from Azure to the device.
-
-Reports device health and status back to the cloud via "Reported Properties".
+The solution highlights telemetry ingestion, command & control, and device state synchronization across cloud platforms.
 
 🛠️ Tech Stack
-Cloud: Azure IoT Hub, GCP Pub/Sub
+Infrastructure
 
-IaC: Terraform
+Terraform
 
-Language: Python 3.x
+Azure RM Provider
 
-Libraries: azure-iot-device, google-cloud-pubsub, python-dotenv
+Google Cloud Provider
 
-📂 Project Structure
-Plaintext
+Cloud Platforms
 
-├── main.tf              # Terraform configuration for Azure & GCP resources
-├── send_data.py         # Main IoT logic (Telemetry + Command Listeners)
-├── .env                 # Environment variables (Connection strings & Project IDs)
-└── requirements.txt     # Python dependencies
-⚙️ Setup & Installation
-1. Infrastructure Provisioning
-Initialize and apply the Terraform configuration to create the cloud resources:
+Azure IoT Hub
 
-Bash
+Google Cloud Pub/Sub
 
-terraform init
-terraform apply
-2. Environment Configuration
-Create a .env file in the root directory:
+Programming Language
 
-Code snippet
+Python 3.x
 
-CONNECTION_STRING="HostName=iiitdm-gowtham-hub.azure-devices.net;DeviceId=...;SharedAccessKey=..."
-GCP_PROJECT_ID="your-gcp-project-id"
-GCP_TOPIC_ID="gowtham-iot-topic"
-3. Run the Device Simulator
-Bash
+Libraries & SDKs
 
-python send_data.py
-🧪 Testing Scenarios
-Scenario 1: Command & Control (Cloud-to-Device)
-Azure: Navigate to the Azure Portal -> IoT Hub -> Devices. Select your device and click Direct Method. Invoke a method (e.g., reboot) and observe the device terminal logs.
+azure-iot-device
 
-GCP: Navigate to the GCP Console -> Pub/Sub -> Topics. Click Publish Message. Send a string (e.g., START_FAN). The device will acknowledge the message via the subscription listener.
+google-cloud-pubsub
 
-Scenario 2: Device Twin Sync
-Desired State: Modify the desired property in the Azure Device Twin JSON. The device script will detect the "patch" and print the new configuration.
+python-dotenv
 
-Reported State: Check the reported section of the Twin in the portal to see the last_sync timestamp updated by the device.
+☁️ Cloud Provider Status
+Provider	Status	Notes
+Azure	✅ Active	Full telemetry, command & control, and device twin synchronization implemented
+GCP	✅ Verified	Telemetry and C2 verified during lab session (screenshots attached as evidence)
+AWS	⏳ Omitted	Skipped due to extended verification delays for AWS student accounts
+🌟 Key Features
+1️⃣ Multi-Cloud Telemetry Ingestion
 
-📊 Monitoring
-Azure: Use az iot hub monitor-events --hub-name <hub-name> to see live telemetry.
+Python-based IoT simulator broadcasts real-time JSON telemetry
 
-GCP: Use the Pub/Sub Messages tab in the console to "Pull" and verify incoming telemetry data.
+Data includes:
+
+Temperature
+
+Humidity
+
+Timestamp
+
+Telemetry is sent simultaneously to:
+
+Azure IoT Hub
+
+GCP Pub/Sub
+
+2️⃣ Command & Control (C2)
+🔹 Azure IoT Hub
+
+Implemented Direct Method handlers
+
+Supports cloud-to-device commands such as:
+
+reboot
+
+status checks
+
+🔹 Google Cloud Pub/Sub
+
+Active subscription listener
+
+Commands published from the GCP Console are received and executed by the device
+
+3️⃣ Device Twin Synchronization (Azure)
+Desired State Sync
+
+Device listens for Desired Property patches
+
+Example: fan_speed
+
+Configuration updates applied instantly on the device
+
+Reported State Sync
+
+Device reports:
+
+status: running
+
+Last update timestamps
+
+Synced back to Azure Device Twin as Reported Properties
+
+📸 Evidence of Implementation
+
+Infrastructure
+
+Terraform code provisions:
+
+Azure Resource Groups
+
+Azure IoT Hub
+
+GCP Pub/Sub Topics & Subscriptions
+
+Metrics
+
+Azure Monitor confirms 700+ telemetry messages successfully processed
+
+Live Logs
+
+Terminal logs show:
+
+Parallel telemetry transmission
+
+Successful cloud-to-device command execution

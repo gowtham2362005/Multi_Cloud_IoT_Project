@@ -16,7 +16,7 @@ resource "azurerm_iothub" "hub" {
 
 # The "Blueprint" for Google Cloud
 provider "google" {
-  project = "qwiklabs-gcp-00-d26cd5bf0ca2" # Copy exactly from your image
+  project = "qwiklabs-gcp-03-9ad0135e3cd9" # Copy exactly from your image
   region  = "us-central1"
 }
 

@@ -12,46 +12,53 @@ load_dotenv()
 AZURE_CONN = os.getenv("CONNECTION_STRING")
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 GCP_TOPIC_ID = os.getenv("GCP_TOPIC_ID")
+GCP_SUB_ID = "gowtham-iot-sub" # This matches your main.tf
 
-# --- 1. Command & Control: Azure Direct Method Handler ---
+# --- 1. AZURE HANDLERS (Command & Twin) ---
 def azure_method_handler(method_request):
-    """Handles incoming commands like 'toggle_light' or 'reboot' from Azure."""
-    print(f"\n[COMMAND] Received from Azure: {method_request.name}")
-    
-    # Logic to handle specific commands
-    payload = {"result": "Successfully executed command"}
+    """Handles Direct Methods (Commands) from Azure Portal"""
+    print(f"\n[AZURE COMMAND] Received: {method_request.name}")
+    payload = {"result": "Command executed successfully"}
     status = 200
-    
-    if method_request.name == "reboot":
-        print("Device is rebooting...")
-    
-    # Send response back to Azure Cloud
     resp = MethodResponse.create_from_method_request(method_request, status, payload)
     azure_client.send_method_response(resp)
 
-# --- 2. Sync Device Twin: Azure Twin Handler ---
 def azure_twin_patch_handler(patch):
-    """Syncs state changes from Cloud to Device (Twin Sync)."""
-    print(f"\n[TWIN SYNC] Received Twin Patch: {patch}")
-    # Example: If Azure says 'target_temp': 25, we could sync this to GCP metadata
-    # or just acknowledge it here.
+    """Syncs Device Twin state from Azure Cloud to Device"""
+    print(f"\n[AZURE TWIN SYNC] New settings received: {patch}")
+
+# --- 2. GCP HANDLER (Command & Control) ---
+def gcp_callback(message):
+    data_str = message.data.decode('utf-8')
+    # If the message contains "temperature", it's telemetry, NOT a command
+    if "temperature" in data_str:
+        message.ack() # Ignore it
+        return 
+        
+    print(f"\n[GCP COMMAND] Received: {data_str}")
+    message.ack()
 
 def send_telemetry():
     global azure_client
     try:
-        # Initialize Azure Client with Handlers
+        # --- Initialize Azure ---
         azure_client = IoTHubDeviceClient.create_from_connection_string(AZURE_CONN)
         azure_client.on_method_request_received = azure_method_handler
         azure_client.on_twin_desired_properties_patch_received = azure_twin_patch_handler
         azure_client.connect()
 
-        # Initialize GCP Publisher
+        # --- Initialize GCP ---
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(GCP_PROJECT_ID, GCP_TOPIC_ID)
+        
+        subscriber = pubsub_v1.SubscriberClient()
+        subscription_path = subscriber.subscription_path(GCP_PROJECT_ID, GCP_SUB_ID)
+        subscriber.subscribe(subscription_path, callback=gcp_callback)
 
-        print("Macha, Device is LIVE and listening for Commands/Twin Sync...")
+        print("Device is LIVE. Listening for commands from BOTH Azure and GCP...")
 
         while True:
+            # Generate Data
             data = {
                 "temperature": round(random.uniform(20.0, 35.0), 2),
                 "humidity": round(random.uniform(40.0, 60.0), 2),
@@ -59,20 +66,19 @@ def send_telemetry():
             }
             msg_content = json.dumps(data)
 
-            # Telemetry to Azure
+            # Send Telemetry to BOTH
+            print(f"Broadcasting: {msg_content}")
             azure_client.send_message(msg_content)
-            
-            # Telemetry to GCP
             publisher.publish(topic_path, msg_content.encode("utf-8"))
-            
-            # Update 'Reported' properties in Azure Twin to show current status
-            reported_state = {"last_sync": time.ctime(), "status": "online"}
+
+            # Sync Twin (Reported Property)
+            reported_state = {"status": "running", "last_update": time.ctime()}
             azure_client.patch_twin_reported_properties(reported_state)
 
             time.sleep(10)
             
     except KeyboardInterrupt:
-        print("Stopped by user.")
+        print("Stopping...")
     finally:
         azure_client.shutdown()
 
