@@ -14,7 +14,7 @@ GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 GCP_TOPIC_ID = os.getenv("GCP_TOPIC_ID")
 GCP_SUB_ID = "gowtham-iot-sub" 
 
-# --- 1. AZURE HANDLERS (Command & Twin) ---
+# --- 1. AZURE HANDLERS ---
 def azure_method_handler(method_request):
     """Handles Direct Methods (Commands) from Azure Portal"""
     print(f"\n[AZURE COMMAND] Received: {method_request.name}")
@@ -27,7 +27,7 @@ def azure_twin_patch_handler(patch):
     """Syncs Device Twin state from Azure Cloud to Device"""
     print(f"\n[AZURE TWIN SYNC] New settings received: {patch}")
 
-# --- 2. GCP HANDLER (Command & Control) ---
+# --- 2. GCP HANDLER ---
 def gcp_callback(message):
     data_str = message.data.decode('utf-8')
     # If the message contains "temperature", it's telemetry, NOT a command
