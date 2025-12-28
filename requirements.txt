@@ -1,0 +1,4 @@
+
+azure-iot-device
+google-cloud-pubsub
+python-dotenv
