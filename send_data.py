@@ -12,7 +12,7 @@ load_dotenv()
 AZURE_CONN = os.getenv("CONNECTION_STRING")
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 GCP_TOPIC_ID = os.getenv("GCP_TOPIC_ID")
-GCP_SUB_ID = "gowtham-iot-sub" # This matches your main.tf
+GCP_SUB_ID = "gowtham-iot-sub" 
 
 # --- 1. AZURE HANDLERS (Command & Twin) ---
 def azure_method_handler(method_request):
@@ -32,7 +32,7 @@ def gcp_callback(message):
     data_str = message.data.decode('utf-8')
     # If the message contains "temperature", it's telemetry, NOT a command
     if "temperature" in data_str:
-        message.ack() # Ignore it
+        message.ack() 
         return 
         
     print(f"\n[GCP COMMAND] Received: {data_str}")
