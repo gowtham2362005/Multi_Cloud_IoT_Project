@@ -2,78 +2,60 @@ import time
 import random
 import json
 import os
-from azure.iot.device import IoTHubDeviceClient, MethodResponse
-from google.cloud import pubsub_v1
+from azure.iot.device import IoTHubDeviceClient
+from google.cloud import pubsub_v1  # NEW: GCP Library
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- Credentials ---
+# --- Azure Credentials ---
 AZURE_CONN = os.getenv("CONNECTION_STRING")
+
+# --- NEW: GCP Credentials ---
 GCP_PROJECT_ID = os.getenv("GCP_PROJECT_ID")
 GCP_TOPIC_ID = os.getenv("GCP_TOPIC_ID")
-GCP_SUB_ID = "gowtham-iot-sub" # This matches your main.tf
-
-# --- 1. AZURE HANDLERS (Command & Twin) ---
-def azure_method_handler(method_request):
-    """Handles Direct Methods (Commands) from Azure Portal"""
-    print(f"\n[AZURE COMMAND] Received: {method_request.name}")
-    payload = {"result": "Command executed successfully"}
-    status = 200
-    resp = MethodResponse.create_from_method_request(method_request, status, payload)
-    azure_client.send_method_response(resp)
-
-def azure_twin_patch_handler(patch):
-    """Syncs Device Twin state from Azure Cloud to Device"""
-    print(f"\n[AZURE TWIN SYNC] New settings received: {patch}")
-
-# --- 2. GCP HANDLER (Command & Control) ---
-def gcp_callback(message):
-    """Handles incoming messages from GCP Pub/Sub Subscription"""
-    print(f"\n[GCP COMMAND] Received: {message.data.decode('utf-8')}")
-    message.ack() # Tell GCP we received it
 
 def send_telemetry():
-    global azure_client
     try:
-        # --- Initialize Azure ---
+        # 1. Initialize Azure Client
         azure_client = IoTHubDeviceClient.create_from_connection_string(AZURE_CONN)
-        azure_client.on_method_request_received = azure_method_handler
-        azure_client.on_twin_desired_properties_patch_received = azure_twin_patch_handler
-        azure_client.connect()
+        print("Macha, connecting to Azure...")
 
-        # --- Initialize GCP ---
+        # 2. NEW: Initialize GCP Publisher
         publisher = pubsub_v1.PublisherClient()
         topic_path = publisher.topic_path(GCP_PROJECT_ID, GCP_TOPIC_ID)
+        print("Macha, connecting to Google Cloud...")
         
-        subscriber = pubsub_v1.SubscriberClient()
-        subscription_path = subscriber.subscription_path(GCP_PROJECT_ID, GCP_SUB_ID)
-        subscriber.subscribe(subscription_path, callback=gcp_callback)
-
-        print("Macha, Device is LIVE. Listening for commands from BOTH Azure and GCP...")
-
         while True:
-            # Generate Data
+            # Generate fake IoT data
+            temperature = round(random.uniform(20.0, 35.0), 2)
+            humidity = round(random.uniform(40.0, 60.0), 2)
+            
+            # Prepare the message payload
             data = {
-                "temperature": round(random.uniform(20.0, 35.0), 2),
-                "humidity": round(random.uniform(40.0, 60.0), 2),
+                "temperature": temperature, 
+                "humidity": humidity,
                 "timestamp": time.time()
             }
             msg_content = json.dumps(data)
-
-            # Send Telemetry to BOTH
-            print(f"Broadcasting: {msg_content}")
+            
+            # --- BROADCASTING TO BOTH CLOUDS ---
+            
+            # Send to Azure
+            print(f"Sending to Azure: {msg_content}")
             azure_client.send_message(msg_content)
-            publisher.publish(topic_path, msg_content.encode("utf-8"))
-
-            # Sync Twin (Reported Property)
-            reported_state = {"status": "running", "last_update": time.ctime()}
-            azure_client.patch_twin_reported_properties(reported_state)
-
-            time.sleep(10)
+            
+            # NEW: Send to GCP (Data must be encoded to bytes)
+            print(f"Sending to GCP:   {msg_content}")
+            gcp_future = publisher.publish(topic_path, msg_content.encode("utf-8"))
+            # gcp_future.result()  # Optional: Wait for GCP to confirm receipt
+            
+            time.sleep(10) # Wait 10 seconds (standard for student projects)
             
     except KeyboardInterrupt:
-        print("Stopping...")
+        print("Stopped by user.")
+    except Exception as e:
+        print(f"Error: {e}")
     finally:
         azure_client.shutdown()
 
