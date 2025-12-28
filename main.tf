@@ -14,18 +14,15 @@ resource "azurerm_iothub" "hub" {
   }
 }
 
-# The "Blueprint" for Google Cloud
 provider "google" {
-  project = "qwiklabs-gcp-03-9ad0135e3cd9" # Copy exactly from your image
+  project = "qwiklabs-gcp-03-9ad0135e3cd9" 
   region  = "us-central1"
 }
 
-# Create a Topic for your IoT data (This is like the Hub's inbox)
 resource "google_pubsub_topic" "iot_topic" {
   name = "gowtham-iot-topic"
 }
 
-# Create a Subscription to read the data
 resource "google_pubsub_subscription" "iot_sub" {
   name  = "gowtham-iot-sub"
   topic = google_pubsub_topic.iot_topic.name
