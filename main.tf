@@ -1,6 +1,6 @@
 resource "azurerm_resource_group" "rg" {
   name     = "iot-challenge-rg"
-  location = "Central India"  # Change this line
+  location = "Central India"  
 }
 
 resource "azurerm_iothub" "hub" {
